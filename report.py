@@ -2,14 +2,87 @@ import streamlit as st  # type: ignore
 import pandas as pd  # type: ignore
 import pyodbc
 import subprocess
-import win32com.client
 import io
 import time
 import os
 import sys
+import runpy
+import win32com.client
 
 # Streamlit Page Config
 st.set_page_config(page_title="REPORTING WEBSITE", layout="wide")
+
+# Custom CSS for animation
+st.markdown(
+    """
+    <style>
+    @keyframes fadeInOut {
+        0% { opacity: 0; }
+        50% { opacity: 1; }
+        100% { opacity: 0; }
+    }
+    .metric-box {
+    background-color: #f0f2f6;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    }
+    /* Set background to pure white */
+    html, body, .stApp {
+        background-color: white !important;
+        color: black !important;
+    }
+
+    .center-text, .footer {
+        position: fixed;
+        left: 50%;
+        transform: translateX(-50%);
+        font-weight: bold;
+        animation: fadeInOut 3s ease-in-out infinite;
+    }
+
+    .center-text {
+        top: 30%;
+        font-size: 120px;
+        color: #4CAF50;
+        background: linear-gradient(45deg, #ff0000, #ff7300, #ffeb00, #47ff00, #00ffcc, #007bff, #b300ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .footer {
+        bottom: 50px;
+        font-size: 16px;
+        color: grey;
+        background-color: white !important; /* Ensure white background */
+        filter: none !important; /* Remove blur */
+        backdrop-filter: none !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+
+
+# Dynamic Animated Text (Runs only while Streamlit app is running)
+animation_placeholder = st.empty()
+footer_placeholder = st.empty()
+
+def show_animation():
+    animation_placeholder.markdown('<div class="center-text">GENESIS</div>', unsafe_allow_html=True)
+    footer_placeholder.markdown('<div class="footer">powered by chester ❤️</div>', unsafe_allow_html=True)
+
+def hide_animation():
+    animation_placeholder.empty()
+    footer_placeholder.empty()
+
+show_animation()
+
+time.sleep(3)  # Display animation for 3 seconds
+hide_animation()
 
 # Database Connection Config
 DB_SERVER = "192.168.15.197"
@@ -18,20 +91,30 @@ DB_PASSWORD = "$PMadrid1234jb"
 DB_NAME = "bcrm"
 DSN_NAME = "data"  # ODBC Data Source Name
 
-# Function to run the Excel macro
+# Function to run the Excel macro in Python 3.12+
 def run_excel_macro():
     try:
         excel = win32com.client.Dispatch("Excel.Application")
-        excel.Visible = False  # Run in the background
+        # REMOVE: excel.Visible = False  # No need to set visibility (causes errors in Python 3.12)
 
         wb = excel.Workbooks.Open(r"\\192.168.15.241\admin\ACTIVE\jlborromeo\CBS HOME LOAN\CBS HEADER MAPPING V2.xlsm")
+        
+        # Wait for Excel to open properly
+        time.sleep(3)
+        
+        # Run the macro
         excel.Application.Run("AlignDataBasedOnMappingWithMissingHeaders")
+
+        # Save & Close
         wb.Save()
         wb.Close()
         excel.Quit()
+        
+        st.success("✅ Macro executed successfully!")
+        time.sleep(10)
         return True
     except Exception as e:
-        st.error(f"Failed to run macro: {e}")
+        st.error(f"❌ Failed to run macro: {e}")
         return False
 
 # Function to run the external Python script
@@ -47,16 +130,20 @@ def run_python_script():
         success_message.success("Python Import Script Executed Successfully! ✅")
 
         # Hide message after 3 seconds
-        time.sleep(3)
+        time.sleep(30)
         success_message.empty()
 
         return True
     except subprocess.CalledProcessError as e:
         st.error(f"Importing Error! ❌\n{e.stderr}")  # Show error details
         return False
+        
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# File paths to SQL queries
-QUERIES_PATH = r"C:\Users\SPM.SPMWNDT0659\Documents\Python\streamlit\queries"
+# Define the relative path for the queries folder in GitHub repo
+QUERIES_PATH = os.path.join(BASE_DIR, "queries")
+
+# Define the report queries dynamically
 REPORT_QUERIES = {
     "MASTERLIST": os.path.join(QUERIES_PATH, "masterlist.sql"),
     "SKIPS AND COLLECT REPORT": os.path.join(QUERIES_PATH, "skips_and_collect_report.sql"),
@@ -102,69 +189,134 @@ def convert_df_to_excel(df):
     return output.getvalue()
 
 # Sidebar Navigation
-
 campaigns = ["CBS HOMELOAN", "PNB HOMELOAN", "SBF HOMELOAN", "BDO HOMELOAN", "OPTION 5"]
+selected_campaign = st.sidebar.selectbox("Choose a campaign:", campaigns)
 
-# Check if there's a campaign stored in session state, else use the first option
-if "selected_campaign" not in st.session_state:
-    st.session_state["selected_campaign"] = campaigns[0]  # Default to first campaign
 
-# Create a selectbox for campaign selection
-selected_campaign = st.sidebar.selectbox("Choose a campaign:", campaigns, index=campaigns.index(st.session_state["selected_campaign"]))
-
-# Update session state when selection changes
-if selected_campaign != st.session_state["selected_campaign"]:
-    st.session_state["selected_campaign"] = selected_campaign
-    st.rerun()  # Refresh page with new selection
-
-# ✅ Update Page Title Based on Selected Campaign
-if selected_campaign:
-    st.title(f"{selected_campaign}")
-else:
-    st.title("REPORTING WEBSITE")
+# Update page title
+st.title(f"{selected_campaign}")
 
 # CBS HOMELOAN - SHOW MASTERLIST + PROCESS ENDORSEMENT
 if selected_campaign == "CBS HOMELOAN":
+    df_masterlist = load_data("MASTERLIST")
+    
+    if not df_masterlist.empty:
+        st.write("---")  # Add a separator
+        
+        st.write("### 📊 Dashboard Metrics")
+        # Ensure page config is only set once in main script, not here
 
-    # Display Masterlist if the session state flag is True
-    if st.session_state.get("show_masterlist", True):
-        df_masterlist = load_data("MASTERLIST")
-        if not df_masterlist.empty:
-            st.dataframe(df_masterlist)
-            # Add download button
-            col1, col2 = st.columns([0.79, 0.15])  # 85% width for col1, 15% for col2
+        def load_data(query):
+            try:
+                conn = pyodbc.connect("DSN=data;UID=jborromeo;PWD=$PMadrid1234jb", autocommit=True)
+                df = pd.read_sql(query, conn)
+                conn.close()
+                return df
+            except Exception as e:
+                st.error(f"Database connection error: {e}")
+                return pd.DataFrame()
 
+        def get_active_accounts():
+            query = """
+            SELECT COUNT(DISTINCT leads.leads_chcode) AS active_accounts
+            FROM bcrm.leads
+            WHERE leads.leads_client_id = 191 AND leads.leads_users_id <> 659;
+            """
+            df = load_data(query)
+            return df.iloc[0, 0] if not df.empty else 0
 
-            with col1:  # Left side: Process Endorsement button
-                if st.button("PROCESS ENDORSEMENT", use_container_width=False):
-                    #st.info("Running Excel Macro... Please wait.")
-                    #if run_excel_macro():
-                        #st.success("Excel Macro Completed Successfully! ✅")
+        def get_ptp_count():
+            query = """
+            SELECT COUNT(DISTINCT leads.leads_acctno) AS ptp_count
+            FROM bcrm.leads_result
+            INNER JOIN bcrm.leads ON leads_result.leads_result_lead = leads.leads_id
+            INNER JOIN bcrm.leads_status ON leads_result.leads_result_status_id = leads_status.leads_status_id
+            WHERE leads.leads_client_id = 191 AND leads_status.leads_status_name = 'PTP' 
+            AND leads.leads_users_id <> 659;
+            """
+            df = load_data(query)
+            return df.iloc[0, 0] if not df.empty else 0
 
-                    status_placeholder = st.empty()  # Create a placeholder for dynamic updates
+        def get_payment_count():
+            query = """
+            SELECT COUNT(DISTINCT leads.leads_acctno) AS ptp_count
+            FROM bcrm.leads_result
+            INNER JOIN bcrm.leads ON leads_result.leads_result_lead = leads.leads_id
+            INNER JOIN bcrm.leads_status ON leads_result.leads_result_status_id = leads_status.leads_status_id
+            WHERE leads.leads_client_id = 191 AND leads_status.leads_status_name = 'PAYMENT' 
+            AND leads.leads_users_id <> 659;
+            """
+            df = load_data(query)
+            return df.iloc[0, 0] if not df.empty else 0
 
-                    status_placeholder.info("Running Import Python Script... Please wait.")
+        def get_active_accounts_trend():
+            query = """
+            SELECT DATE(leads.leads_endo_date) AS date, COUNT(DISTINCT leads.leads_chcode) AS active_accounts
+            FROM bcrm.leads
+            WHERE leads.leads_client_id = 191 AND leads.leads_users_id <> 659
+            GROUP BY DATE(leads.leads_ts)
+            ORDER BY DATE(leads.leads_ts);
+            """
+            return load_data(query)
+
+        st.title("Dashboard - Active Accounts & PTP Count")
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            active_accounts = get_active_accounts()
+            st.markdown(f'<div class="metric-box">Active Accounts: {active_accounts}</div>', unsafe_allow_html=True)
+
+        with col2:
+            ptp_count = get_ptp_count()
+            st.markdown(f'<div class="metric-box">PTP Count: {ptp_count}</div>', unsafe_allow_html=True)
+
+        with col3:
+            payment_count = get_payment_count()
+            st.markdown(f'<div class="metric-box">Payment Count: {payment_count}</div>', unsafe_allow_html=True)
+
+        # Line Chart for Active Accounts Trend
+        df_trend = get_active_accounts_trend()
+        if not df_trend.empty:
+            st.write("## Active Accounts Trend")
+            st.line_chart(df_trend.set_index("date"))
+
+        st.dataframe(df_masterlist)  # Not sure why this is duplicated, you might want to remove it
+
+        col1, col2 = st.columns([5, 0.97])
+
+        with col1:
+            if st.button("PROCESS ENDORSEMENT", use_container_width=False):
+                status_placeholder = st.empty()  # Create a placeholder for dynamic updates
+                status_placeholder.info("Running Excel Macro... Please wait.")
+                time.sleep(5)
+                status_placeholder.empty()
+                # ✅ First, run the Excel macro
+                if run_excel_macro():
+                    status_placeholder.info("Excel Macro executed successfully. Now running Import Python Script... Please wait.")
                     time.sleep(5)
-                    status_placeholder.empty()
 
-                    if run_python_script():  
-                        #status_placeholder.info("Running Import Python Script... Please wait.")
+                    # ✅ Then, run the Python script
+                    if run_python_script():
                         status_placeholder.info("Please wait.")
-                        #time.sleep(2)  # Wait for 5 seconds
                         status_placeholder.empty()  # Clear the message
                     else:
                         status_placeholder.error("Importing Error! ❌ File not found!")
                         time.sleep(5)  # Wait for 5 seconds
                         status_placeholder.empty()  # Clear the message
-
-            with col2:  # Right side: Download button
-                st.download_button(
-                    label="📥 DOWNLOAD MASTERLIST",
-                    data=convert_df_to_excel(df_masterlist),
-                    file_name="Masterlist.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
-
+                else:
+                    status_placeholder.error("Failed to execute Excel Macro! ❌")
+                # ✅ Clear status message after 5 seconds
+                time.sleep(5)
+                status_placeholder.empty()
+        
+        with col2:
+            st.download_button(
+                label="📥 DOWNLOAD MASTERLIST",
+                data=convert_df_to_excel(df_masterlist),
+                file_name="Masterlist.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
             
 
 # BDO HOMELOAN - Report Selection

@@ -3,6 +3,7 @@ import sys
 import io
 import time
 import pyautogui
+import streamlit as st
 import tkinter as tk
 from tkinter import messagebox
 from datetime import datetime
@@ -78,7 +79,7 @@ class Start:
     def navigate_to_import_manager(self):
         """ Navigates to the Import Manager page """
         print("📂 Navigating to Import Manager...")
-        #WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//a[span[text()=' Import Manager ']]"))).click()
+        WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//a[span[text()=' Import Manager ']]"))).click()
         WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//a[@data-path='ImportManager.Batch']"))).click()
         print("✅ Import Manager opened.")
 
@@ -115,13 +116,17 @@ class Start:
                 element = self.driver.find_element(By.XPATH, xpath)
                 if element.is_displayed():
                     print(f"✅ Element appeared: {xpath}")
+                    # Show a success message when the element appears
+                    messagebox.showinfo("Import Completed", "✅ Import process completed successfully.")
                     return element  # Successfully found element
             except NoSuchElementException:
                 pass  # Element not found, continue waiting
 
             print(f"🔄 Still waiting... Checking again in {check_interval} seconds.")
+            # Show a message box indicating the waiting process
+            messagebox.showinfo("Processing", f"⏳ Still waiting... Checking...")
             time.sleep(check_interval)  # Wait before checking again
-
+             # add message box here this message  Still waiting... Checking again in {check_interval} seconds.
     def wait_for_import_completion(self):
         """ Waits indefinitely for the import process to complete """
         print("⏳ Waiting for import completion...")
@@ -132,6 +137,7 @@ class Start:
                 EC.presence_of_element_located((By.XPATH, "//div[contains(@id, 'bulk-notifier-completed-content')]"))
             )
             print("✅ Notification container detected.")
+           
         except TimeoutException:
             print("⚠ Notification container did not appear within 60 seconds, but will continue waiting.")
 
@@ -140,12 +146,18 @@ class Start:
 
         self.wait_until_element_appears(complete_message_xpath)
         print("✅ Import process completed successfully.")
+        time.sleep(30)
 
-    def show_message(self, title, message):
-        """ Displays a pop-up message using tkinter """
-        root = tk.Tk()
-        root.withdraw()  # Hide root window
-        messagebox.showerror(title, message)
+    def show_auto_message(self, title, message, duration=3000):
+        """ Displays a non-blocking pop-up message that disappears after a set duration """
+        popup = tk.Toplevel()
+        popup.title(title)
+        popup.geometry("300x100+1000+500")  # Adjust position if needed
+        tk.Label(popup, text=message, font=("Arial", 12), padx=20, pady=20).pack()
+        
+        # Close automatically after `duration` milliseconds (default 3 sec)
+        popup.after(duration, popup.destroy)
+
 
 # Run the automation
 if __name__ == "__main__":
