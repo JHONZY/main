@@ -84,12 +84,7 @@ show_animation()
 time.sleep(3)  # Display animation for 3 seconds
 hide_animation()
 
-# Database Connection Config
-DB_SERVER = "192.168.15.197"
-DB_USER = "jborromeo"
-DB_PASSWORD = "$PMadrid1234jb"
-DB_NAME = "bcrm"
-DSN_NAME = "data"  # ODBC Data Source Name
+
 
 # Function to run the Excel macro in Python 3.12+
 def run_excel_macro():
@@ -137,7 +132,23 @@ def run_python_script():
     except subprocess.CalledProcessError as e:
         st.error(f"Importing Error! ❌\n{e.stderr}")  # Show error details
         return False
-        
+
+# Load Database Credentials
+if "DB" not in st.secrets:
+    st.error("❌ Database credentials missing! Set them in Streamlit Secrets.")
+    st.stop()
+
+DB_DRIVER = st.secrets["DB"].get("DRIVER", "")
+DB_SERVER = st.secrets["DB"].get("SERVER", "")
+DB_DATABASE = st.secrets["DB"].get("DATABASE", "")
+DB_USER = st.secrets["DB"].get("UID", "")
+DB_PASSWORD = st.secrets["DB"].get("PWD", "")
+
+# Validate Secrets
+if not all([DB_DRIVER, DB_SERVER, DB_DATABASE, DB_USER, DB_PASSWORD]):
+    st.error("❌ One or more database credentials are missing!")
+    st.stop()
+    
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Define the relative path for the queries folder in GitHub repo
