@@ -1,8 +1,5 @@
 streamlit
-pandas
-pyodbc
-xlsxwriter
-pip
-pyautogui
 selenium
-tk
+pyodbc
+pandas
+xlsxwriter
