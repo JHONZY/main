@@ -136,11 +136,12 @@ if "DB" not in st.secrets:
     st.error("❌ Database credentials missing! Set them in Streamlit Secrets.")
     st.stop()
 
-DB_DRIVER = st.secrets["DB"].get("DRIVER", "")
-DB_SERVER = st.secrets["DB"].get("SERVER", "")
-DB_DATABASE = st.secrets["DB"].get("DATABASE", "")
-DB_USER = st.secrets["DB"].get("UID", "")
-DB_PASSWORD = st.secrets["DB"].get("PWD", "")
+# Database credentials
+DB_SERVER = "192.168.15.197"
+DB_USER = "jborromeo"
+DB_PASSWORD = "$PMadrid1234jb"
+DB_NAME = "bcrm"
+DB_DRIVER = "MySQL ODBC 8.0 ANSI Driver"
 
 # Validate Secrets
 if not all([DB_DRIVER, DB_SERVER, DB_DATABASE, DB_USER, DB_PASSWORD]):
@@ -173,31 +174,33 @@ def load_query(report_type):
         st.error(f"Error loading SQL query file: {file_path}\nError: {e}")
         return None
 
-# Function to fetch data from ODBC database (Masterlist + Reports)
+# Function to fetch data from the MySQL database
 def load_data(report_type):
-    query = load_query(report_type)  # Assuming `load_query` is defined elsewhere
+    query = load_query(report_type)
     if not query:
         return pd.DataFrame()
 
     try:
+        # Create a connection using the correct driver
         conn = pyodbc.connect(
-            "DRIVER={MySQL ODBC 8.0 ANSI Driver};"
-            "SERVER=192.168.15.197;"
-            "DATABASE=bcrm;"
-            "UID=jborromeo;"
-            "PWD=$PMadrid1234jb",
+            f"DRIVER={DB_DRIVER};"
+            f"SERVER={DB_SERVER};"
+            f"DATABASE={DB_NAME};"
+            f"UID={DB_USER};"
+            f"PWD={DB_PASSWORD}",
             autocommit=True
         )
 
+        # Read SQL query into DataFrame
         df = pd.read_sql(query, conn)
-        conn.close()  # ✅ Ensure the connection is closed
+
+        # Close connection
+        conn.close()
         return df
 
-    except Exception as e:
-        st.error(f"❌ Database connection error: {e}")
+    except pyodbc.Error as e:
+        st.error(f"Database connection error: {e}")
         return pd.DataFrame()
-
-
         
 # Function to convert DataFrame to Excel
 def convert_df_to_excel(df):
