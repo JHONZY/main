@@ -2,4 +2,7 @@ streamlit
 pandas
 pyodbc
 xlsxwriter
-win32com.client
+win32com
+pip
+pyautogui
+selenium
