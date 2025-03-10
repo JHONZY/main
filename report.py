@@ -154,7 +154,7 @@ def load_data(report_type):
 
     try:
         conn = pyodbc.connect(
-            f"DRIVER={DB_DRIVER};SERVER={DB_SERVER};DATABASE={DB_NAME};UID={DB_USER};PWD={DB_PASSWORD}",
+            f"DRIVER={DB_DRIVER};SERVER={DB_SERVER};DATABASE={DB_DATABASE};UID={DB_USER};PWD={DB_PASSWORD}",
             autocommit=True
         )
         df = pd.read_sql(query, conn)
