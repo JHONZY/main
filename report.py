@@ -180,14 +180,17 @@ def load_data(report_type):
         return pd.DataFrame()
 
     try:
-        # Create a single database connection
-        conn = pyodbc.connect(f"DSN={DSN_NAME};UID={DB_USER};PWD={DB_PASSWORD}", autocommit=True)
+        conn = pyodbc.connect(
+            f"DRIVER={DB_DRIVER};SERVER={DB_SERVER};DATABASE={DB_DATABASE};UID={DB_USER};PWD={DB_PASSWORD}",
+            autocommit=True
+        )
         with conn:
             df = pd.read_sql(query, conn)
         return df
     except Exception as e:
         st.error(f"Database connection error: {e}")
         return pd.DataFrame()
+
 
         
 # Function to convert DataFrame to Excel
