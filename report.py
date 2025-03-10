@@ -1,37 +1,53 @@
+import streamlit as st
 import pyodbc
 
-# Define your connection parameters
-conn_str = (
-    "DRIVER={MySQL ODBC 8.0 ANSI Driver};"
-    "SERVER=192.168.15.197;"  # Hostname or IP
-    "PORT=3306;"  # Explicitly define the port
-    "DATABASE=bcrm;"
-    "USER=jborromeo;"  # Use "USER" instead of "UID"
-    "PASSWORD=$PMadrid1234jb;"  # Use "PASSWORD" instead of "PWD"
-    "OPTION=3;"  # Enables some compatibility options
-)
+# Load Database Credentials from Streamlit Secrets
+if "DB" not in st.secrets:
+    st.error("❌ Database credentials are missing! Please set them in Streamlit Secrets.")
+    st.stop()
 
-try:
-    print("🔄 Attempting to connect to the database...")  # Log start
+DB_CREDENTIALS = st.secrets["DB"]
 
-    # Attempt to establish a connection
-    conn = pyodbc.connect(conn_str)
-    cursor = conn.cursor()
-    
-    # Execute a simple query
-    cursor.execute("SELECT DATABASE();")
-    result = cursor.fetchone()
-    
-    # Print the result if connected
-    if result:
-        print(f"✅ Connected successfully to database: {result[0]}")
-    else:
-        print("⚠️ Connection successful, but no database selected.")
+DB_DRIVER = DB_CREDENTIALS["driver"]
+DB_SERVER = DB_CREDENTIALS["server"]
+DB_PORT = DB_CREDENTIALS.get("port", "3306")  # Default port is 3306
+DB_DATABASE = DB_CREDENTIALS["database"]
+DB_USER = DB_CREDENTIALS["user"]
+DB_PASSWORD = DB_CREDENTIALS["password"]
 
-    # Close the connection
-    cursor.close()
-    conn.close()
-    print("🔒 Connection closed successfully.")
+# Connection String for ODBC
+conn_str = f"""
+    DRIVER={DB_DRIVER};
+    SERVER={DB_SERVER};
+    PORT={DB_PORT};
+    DATABASE={DB_DATABASE};
+    USER={DB_USER};
+    PASSWORD={DB_PASSWORD};
+    OPTION=3;
+"""
 
-except Exception as e:
-    print(f"❌ Database connection error: {e}")
+# Streamlit UI
+st.title("Database Connection Test")
+
+def test_connection():
+    try:
+        with st.spinner("🔄 Connecting to the database..."):
+            conn = pyodbc.connect(conn_str, timeout=10)  # 10-sec timeout
+            cursor = conn.cursor()
+            cursor.execute("SELECT DATABASE();")
+            result = cursor.fetchone()
+
+            if result:
+                st.success(f"✅ Connected successfully to database: {result[0]}")
+            else:
+                st.warning("⚠️ Connection successful, but no database selected.")
+
+            cursor.close()
+            conn.close()
+            st.info("🔒 Connection closed successfully.")
+
+    except pyodbc.Error as e:
+        st.error(f"❌ Database connection error: {e}")
+
+if st.button("Test Database Connection"):
+    test_connection()
