@@ -1,25 +1,22 @@
-import streamlit as st
 import mysql.connector
-
-# Load credentials securely
-DB_CREDENTIALS = st.secrets["DB"]
 
 try:
     conn = mysql.connector.connect(
-        host=DB_CREDENTIALS["host"],
-        database=DB_CREDENTIALS["database"],
-        user=DB_CREDENTIALS["user"],
-        password=DB_CREDENTIALS["password"]
+        host="192.168.15.197",
+        port=3306,  # <-- Add port here
+        database="bcrm",
+        user="jborromeo",
+        password="$PMadrid1234jb"
     )
 
     cursor = conn.cursor()
     cursor.execute("SELECT DATABASE();")
     result = cursor.fetchone()
-    
-    st.success(f"✅ Connected successfully to database: {result[0]}")
+
+    print(f"Connected successfully to database: {result[0]}")
 
     cursor.close()
     conn.close()
 
 except Exception as e:
-    st.error(f"❌ Database connection error: {e}")
+    print(f"❌ Database connection error: {e}")
