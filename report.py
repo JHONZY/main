@@ -78,14 +78,17 @@ if "DB" not in st.secrets:
     st.error("❌ Database credentials missing! Set them in Streamlit Secrets.")
     st.stop()
 
-DB_SERVER = st.secrets["DB"]["server"]
-DB_USER = st.secrets["DB"]["user"]
-DB_PASSWORD = st.secrets["DB"]["password"]
-DB_NAME = st.secrets["DB"]["database"]
-DB_DRIVER = st.secrets["DB"]["driver"]
+# Load database credentials from secrets
+DB_CREDENTIALS = st.secrets["DB"]
 
-# Validate Secrets
-if not all([DB_DRIVER, DB_SERVER, DB_NAME, DB_USER, DB_PASSWORD]):
+DB_DRIVER = DB_CREDENTIALS["driver"]
+DB_SERVER = DB_CREDENTIALS["server"]
+DB_DATABASE = DB_CREDENTIALS["database"]
+DB_USER = DB_CREDENTIALS["user"]
+DB_PASSWORD = DB_CREDENTIALS["password"]
+
+# Check if all credentials exist
+if not all([DB_DRIVER, DB_SERVER, DB_DATABASE, DB_USER, DB_PASSWORD]):
     st.error("❌ One or more database credentials are missing!")
     st.stop()
 
