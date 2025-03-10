@@ -144,9 +144,10 @@ DB_NAME = "bcrm"
 DB_DRIVER = "MySQL ODBC 8.0 ANSI Driver"
 
 # Validate Secrets
-if not all([DB_DRIVER, DB_SERVER, DB_DATABASE, DB_USER, DB_PASSWORD]):
-    st.error("❌ One or more database credentials are missing!")
-    st.stop()
+if not all([DB_DRIVER, DB_SERVER, DB_NAME, DB_USER, DEB_PASSWORD])
+st.error("
+st.stop()
+One or more database credentials are missing!")
     
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
