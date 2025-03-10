@@ -3,4 +3,3 @@ selenium
 pyodbc
 pandas
 xlsxwriter
-pywin32
