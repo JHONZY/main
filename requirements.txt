@@ -3,3 +3,4 @@ selenium
 pyodbc
 pandas
 xlsxwriter
+mysql-connector-python
