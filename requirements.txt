@@ -3,3 +3,4 @@ pandas
 pyodbc
 xlsxwriter
 win32com.client
+pip install --upgrade pip
