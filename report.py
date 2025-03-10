@@ -175,24 +175,26 @@ def load_query(report_type):
 
 # Function to fetch data from ODBC database (Masterlist + Reports)
 def load_data(report_type):
-    query = load_query(report_type)
+    query = load_query(report_type)  # Assuming `load_query` is defined elsewhere
     if not query:
         return pd.DataFrame()
 
-        try:
-            conn = pyodbc.connect(
-                "DRIVER={MySQL ODBC 8.0 ANSI Driver};"
-                "SERVER=192.168.15.197;"
-                "DATABASE=bcrm;"
-                "UID=jborromeo;"
-                "PWD=$PMadrid1234jb",
-                autocommit=True
-            )
-        with conn:
-            df = pd.read_sql(query, conn)
+    try:
+        conn = pyodbc.connect(
+            "DRIVER={MySQL ODBC 8.0 ANSI Driver};"
+            "SERVER=192.168.15.197;"
+            "DATABASE=bcrm;"
+            "UID=jborromeo;"
+            "PWD=$PMadrid1234jb",
+            autocommit=True
+        )
+
+        df = pd.read_sql(query, conn)
+        conn.close()  # ✅ Ensure the connection is closed
         return df
+
     except Exception as e:
-        st.error(f"Database connection error: {e}")
+        st.error(f"❌ Database connection error: {e}")
         return pd.DataFrame()
 
 
