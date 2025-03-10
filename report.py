@@ -179,12 +179,15 @@ def load_data(report_type):
     if not query:
         return pd.DataFrame()
 
-    try:
-        conn = pyodbc.connect(
-            "DRIVER={MySQL ODBC 8.0 ANSI Driver};"
-            f"SERVER={DB_SERVER};DATABASE={DB_DATABASE};UID={DB_USER};PWD={DB_PASSWORD}",
-            autocommit=True
-        )
+        try:
+            conn = pyodbc.connect(
+                "DRIVER={MySQL ODBC 8.0 ANSI Driver};"
+                "SERVER=192.168.15.197;"
+                "DATABASE=bcrm;"
+                "UID=jborromeo;"
+                "PWD=$PMadrid1234jb",
+                autocommit=True
+            )
         with conn:
             df = pd.read_sql(query, conn)
         return df
